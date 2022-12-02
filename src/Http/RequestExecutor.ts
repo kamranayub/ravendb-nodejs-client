@@ -33,13 +33,10 @@ import { validateUri } from "../Utility/UriUtil";
 import * as StreamUtil from "../Utility/StreamUtil";
 import { closeHttpResponse } from "../Utility/HttpUtil";
 import { PromiseStatusTracker } from "../Utility/PromiseUtil";
-import * as http from "http";
-import * as https from "https";
 import { IBroadcast } from "./IBroadcast";
 import { StringUtil } from "../Utility/StringUtil";
 import { IRaftCommand } from "./IRaftCommand";
 import AbortController from "abort-controller";
-import { URL } from "url";
 import { EventEmitter } from "events";
 import {
     BeforeRequestEventArgs,
@@ -49,7 +46,6 @@ import {
 } from "../Documents/Session/SessionEvents";
 import { TimeUtil } from "../Utility/TimeUtil";
 import { UpdateTopologyParameters } from "./UpdateTopologyParameters";
-import { v4 as uuidv4 } from "uuid";
 import { DatabaseHealthCheckOperation } from "../Documents/Operations/DatabaseHealthCheckOperation";
 
 const DEFAULT_REQUEST_OPTIONS = {};
@@ -142,7 +138,7 @@ export class NodeStatus implements IDisposable {
 export class RequestExecutor implements IDisposable {
     private _emitter = new EventEmitter();
 
-    private static readonly GLOBAL_APPLICATION_IDENTIFIER = uuidv4().toString();
+    private static readonly GLOBAL_APPLICATION_IDENTIFIER = "aaa";
 
     private static readonly INITIAL_TOPOLOGY_ETAG = -2;
 
@@ -181,13 +177,7 @@ export class RequestExecutor implements IDisposable {
 
     private _firstTopologyUpdatePromiseInternal;
 
-    private _httpAgent: http.Agent;
-
-    private static readonly KEEP_ALIVE_HTTP_AGENT = new http.Agent({
-        keepAlive: true
-    });
-
-    private static readonly HTTPS_AGENT_CACHE = new Map<string, https.Agent>();
+    private _httpAgent: any;
 
     protected get _firstTopologyUpdatePromise(): Promise<void> {
         return this._firstTopologyUpdatePromiseInternal;
@@ -329,7 +319,7 @@ export class RequestExecutor implements IDisposable {
             : null;
     }
 
-    public getHttpAgent(): http.Agent {
+    public getHttpAgent(): any {
         if (this._httpAgent) {
             return this._httpAgent;
         }
@@ -337,24 +327,8 @@ export class RequestExecutor implements IDisposable {
         return this._httpAgent = this._createHttpAgent();
     }
 
-    private _createHttpAgent(): http.Agent {
-        if (this._certificate) {
-            const agentOptions = this._certificate.toAgentOptions();
-            const cacheKey = JSON.stringify(agentOptions, null, 0);
-            if (RequestExecutor.HTTPS_AGENT_CACHE.has(cacheKey)) {
-                return RequestExecutor.HTTPS_AGENT_CACHE.get(cacheKey);
-            } else {
-                const agent = new https.Agent({
-                    keepAlive: true,
-                    ...agentOptions
-                });
-
-                RequestExecutor.HTTPS_AGENT_CACHE.set(cacheKey, agent);
-                return agent;
-            }
-        } else {
-            return RequestExecutor.KEEP_ALIVE_HTTP_AGENT;
-        }
+    private _createHttpAgent(): any {
+        return null;
     }
 
     public getTopologyNodes(): ServerNode[] {
@@ -566,6 +540,8 @@ export class RequestExecutor implements IDisposable {
         command: RavenCommand<TResult>,
         sessionInfo?: SessionInfo,
         options?: ExecuteOptions<TResult>): Promise<void> {
+
+        console.log("execute");
 
         if (options) {
             return this._executeOnSpecificNode(command, sessionInfo, options);
@@ -884,10 +860,10 @@ export class RequestExecutor implements IDisposable {
 
         const responseAndStream = await this._sendRequestToServer(chosenNode, nodeIndex, command, shouldRetry, sessionInfo, req, url, controller);
 
+        console.log("I GOT RESOSN AND STERAM");
         if (!responseAndStream) {
             return;
         }
-
 
         const response = responseAndStream.response;
         const bodyStream = responseAndStream.bodyStream;
@@ -898,6 +874,8 @@ export class RequestExecutor implements IDisposable {
         let responseDispose: ResponseDisposeHandling = "Automatic";
 
         try {
+            console.log("RESPONSE = ", response, response.status);
+
 
             if (response.status === StatusCodes.NotModified) {
                 this._emitter.emit("succeedRequest", new SucceedRequestEventArgs(this._databaseName, url, response, req, attemptNum));
@@ -937,6 +915,8 @@ export class RequestExecutor implements IDisposable {
             }
 
             this._emitter.emit("succeedRequest", new SucceedRequestEventArgs(this._databaseName, url, response, req, attemptNum));
+
+            console.log("about to process resonse");
 
             responseDispose = await command.processResponse(this._cache, response, bodyStream, req.uri as string);
             this._lastReturnedResponse = new Date();
@@ -985,6 +965,9 @@ export class RequestExecutor implements IDisposable {
         try {
             this.numberOfServerRequests++;
 
+
+            console.log("sending request to the server");
+
             const timeout = command.timeout || this._defaultTimeout;
 
             if (!TypeUtil.isNullOrUndefined(timeout)) {
@@ -1016,7 +999,10 @@ export class RequestExecutor implements IDisposable {
             } else {
                 return await this._send(chosenNode, command, sessionInfo, request);
             }
+
+            console.log("after send");
         } catch (e) {
+            console.log("error = " + e);
             if (e.name === "AllTopologyNodesDownException") {
                 throw e;
             }

@@ -1,8 +1,6 @@
 import * as net from "net";
 import { Socket } from "net";
-import { URL } from "url";
 import { IAuthOptions } from "../Auth/AuthOptions";
-import * as tls from "tls";
 import { Certificate } from "../Auth/Certificate";
 import { PeerCertificate } from "tls";
 import { getError, throwError } from "../Exceptions";
@@ -11,7 +9,7 @@ import { OperationTypes, SupportedFeatures } from "../ServerWide/Tcp/TcpConnecti
 
 export class TcpUtils {
     public static async connect(
-        urlString: string, 
+        urlString: string,
         serverCertificate: string,
         clientCertificate: IAuthOptions): Promise<Socket> {
         const url = new URL(urlString);
@@ -28,7 +26,7 @@ export class TcpUtils {
                     if (remoteCert.length !== expectedCert.length) {
                         sameCert = false;
                     }
-                    
+
                     for (let i = 0; i < remoteCert.length; i++) {
                         if (remoteCert[i] !== expectedCert[i]) {
                             sameCert = false;
@@ -40,10 +38,7 @@ export class TcpUtils {
                         return getError("AuthenticationException", "Invalid server certificate.");
                     }
                 };
-                const socket = tls.connect(port, host, agentOptions, () => {
-                    socket.removeListener("error", reject);
-                    resolve(socket);
-                });
+                const socket = null;
 
                 socket.once("error", reject);
                 socket.setNoDelay(true);

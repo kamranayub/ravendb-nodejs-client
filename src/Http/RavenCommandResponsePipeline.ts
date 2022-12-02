@@ -18,10 +18,10 @@ import {
 } from "../Mapping/Json/Streams/CollectResultStream";
 import { throwError, getError } from "../Exceptions";
 import {
-    TransformJsonKeysStreamOptions, 
+    TransformJsonKeysStreamOptions,
     TransformKeysJsonStream } from "../Mapping/Json/Streams/TransformKeysJsonStream";
-import { 
-    TransformJsonKeysProfile, 
+import {
+    TransformJsonKeysProfile,
     getTransformJsonKeysProfile } from "../Mapping/Json/Streams/TransformJsonKeysProfiles";
 import { TypeUtil } from "../Utility/TypeUtil";
 import * as Asm from "stream-json/Assembler";
@@ -161,7 +161,7 @@ export class RavenCommandResponsePipeline<TStreamResult> extends EventEmitter {
         const opts = this._opts;
         const streams: stream.Stream[] = [src];
         if (opts.collectBody) {
-            src.on("data", (chunk: Buffer | string) => this._appendBody(chunk));
+            //src.on("data", (chunk: Buffer | string) => this._appendBody(chunk));
         }
 
         if (opts.jsonAsync) {
@@ -230,14 +230,15 @@ export class RavenCommandResponsePipeline<TStreamResult> extends EventEmitter {
         }
 
         if (opts.collectBody) {
-            resultPromise
+
+         /*   resultPromise
                 .then(() => {
                     const body = this._body.toString();
                     this.emit("body", body);
                     if (typeof opts.collectBody === "function") {
                         opts.collectBody(body);
                     }
-                });
+                });*/
         }
 
         return StreamUtil.pipelineAsync(...streams)

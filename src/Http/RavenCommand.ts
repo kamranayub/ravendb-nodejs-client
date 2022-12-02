@@ -12,8 +12,8 @@ import { TypeInfo } from "../Mapping/ObjectMapper";
 import { JsonSerializer } from "../Mapping/Json/Serializer";
 import { RavenCommandResponsePipeline } from "./RavenCommandResponsePipeline";
 import { DocumentConventions } from "../Documents/Conventions/DocumentConventions";
-import * as http from "http";
 import { ObjectTypeDescriptor, ServerResponse } from "../Types";
+import { stringToReadable } from "../Utility/StreamUtil";
 
 const log = getLogger({ module: "RavenCommand" });
 
@@ -107,6 +107,7 @@ export abstract class RavenCommand<TResult> {
     }
 
     public async setResponseAsync(bodyStream: stream.Stream, fromCache: boolean): Promise<string> {
+
         if (this._responseType === "Empty" || this._responseType === "Raw") {
             this._throwInvalidResponse();
         }
@@ -118,26 +119,24 @@ export abstract class RavenCommand<TResult> {
             this._responseType);
     }
 
-    public async send(agent: http.Agent,
+    public async send(agent: any,
         requestOptions: HttpRequestParameters): Promise<{ response: HttpResponse, bodyStream: stream.Readable }> {
         const { body, uri, ...restOptions } = requestOptions;
         log.info(`Send command ${this.constructor.name} to ${uri}${body ? " with body " + body : ""}.`);
 
         if (requestOptions.agent) { // support for fiddler
-            agent = requestOptions.agent as http.Agent;
+            agent = requestOptions.agent as any;
         }
 
         const optionsToUse = { body, ...restOptions, agent } as RequestInit;
 
-        const passthrough = new stream.PassThrough();
-        const response = await fetch(uri, optionsToUse);
-        passthrough.pause();
-        response.body
-            .pipe(passthrough);
+        const response: any = await fetch(uri, optionsToUse);
+
+        const text = await response.text();
 
         return {
             response,
-            bodyStream: passthrough
+            bodyStream: stringToReadable(text)
         };
     }
 
@@ -170,6 +169,8 @@ export abstract class RavenCommand<TResult> {
             return "Automatic";
         }
 
+        console.log("about to process resonse, response type - " + this.responseType);
+
         if (this._responseType === "Empty" ||
             response.status === StatusCodes.NoContent) {
             return "Automatic";
@@ -184,17 +185,17 @@ export abstract class RavenCommand<TResult> {
                 }
 
                 const bodyPromise = this.setResponseAsync(bodyStream, false);
-                bodyStream.resume();
+                //bodyStream.resume();
                 const body = await bodyPromise;
 
                 if (cache) {
-                    this._cacheResponse(cache, url, response, body);
+                    //this._cacheResponse(cache, url, response, body);
                 }
 
                 return "Automatic";
             } else {
                 const bodyPromise = this.setResponseAsync(bodyStream, false);
-                bodyStream.resume();
+                //bodyStream.resume();
                 await bodyPromise;
             }
 
@@ -205,25 +206,17 @@ export abstract class RavenCommand<TResult> {
                 `Error processing command ${this.constructor.name} response: ${err.stack}`, err);
         } finally {
             closeHttpResponse(response);
-            // response.destroy(); 
+            // response.destroy();
             // since we're calling same hosts and port a lot, we might not want to destroy sockets explicitly
-            // they're going to get back to Agent's pool and reused 
+            // they're going to get back to Agent's pool and reused
         }
 
         return "Automatic";
     }
 
     protected _cacheResponse(cache: HttpCache, url: string, response: HttpResponse, responseJson: string): void {
-        if (!this.canCache) {
-            return;
-        }
+        return ;
 
-        const changeVector = getEtagHeader(response);
-        if (!changeVector) {
-            return;
-        }
-
-        cache.set(url, changeVector, responseJson);
     }
 
     protected _addChangeVectorIfNotNull(changeVector: string, req: HttpRequestParameters): void {
@@ -233,9 +226,9 @@ export abstract class RavenCommand<TResult> {
     }
 
     protected _reviveResultTypes<TResponse extends object>(
-        raw: object, 
-        conventions: DocumentConventions, 
-        typeInfo?: TypeInfo, 
+        raw: object,
+        conventions: DocumentConventions,
+        typeInfo?: TypeInfo,
         knownTypes?: Map<string, ObjectTypeDescriptor>) {
         return conventions.objectMapper.fromObjectLiteral<TResponse>(raw, typeInfo, knownTypes);
     }
