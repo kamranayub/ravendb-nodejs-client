@@ -19,7 +19,6 @@ export function reduceStreamToPromise<T>(
 }
 
 export async function readToBuffer(stream: stream.Stream): Promise<Buffer> {
-    console.log("READ TO BUFFER");
     const chunks: Uint8Array[] = [];
     stream
         .on("data", data => chunks.push(data));
@@ -30,7 +29,6 @@ export async function readToBuffer(stream: stream.Stream): Promise<Buffer> {
 }
 
 export async function readToEnd(readable: stream.Readable | stream.Stream): Promise<string> {
-    console.log("READ TO END");
     const chunks = [];
     readable.on("data", chunk => chunks.push(chunk));
 

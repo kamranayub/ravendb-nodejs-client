@@ -45,9 +45,6 @@ export class GetDatabaseNamesCommand extends RavenCommand<string[]> {
     }
 
     public async setResponseAsync(bodyStream: any, fromCache: boolean): Promise<string> {
-
-        console.log("in set response async", bodyStream, Object.keys(bodyStream).join(", "));
-
         if (!bodyStream) {
             this._throwInvalidResponse();
             return;

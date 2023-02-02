@@ -146,7 +146,6 @@ export abstract class RavenCommand<TResult> {
 
     const fetchFn = fetcher ?? fetch; // support for custom fetcher
     const response: any = await fetchFn(uri, optionsToUse);
-
     const text = await response.text();
 
     return {
@@ -185,10 +184,6 @@ export abstract class RavenCommand<TResult> {
     if (!response) {
       return "Automatic";
     }
-
-    console.log(
-      "about to process resonse, response type - " + this.responseType
-    );
 
     if (
       this._responseType === "Empty" ||

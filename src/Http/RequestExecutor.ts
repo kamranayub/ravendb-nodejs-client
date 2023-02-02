@@ -541,8 +541,6 @@ export class RequestExecutor implements IDisposable {
         sessionInfo?: SessionInfo,
         options?: ExecuteOptions<TResult>): Promise<void> {
 
-        console.log("execute");
-
         if (options) {
             return this._executeOnSpecificNode(command, sessionInfo, options);
         }
@@ -860,7 +858,6 @@ export class RequestExecutor implements IDisposable {
 
         const responseAndStream = await this._sendRequestToServer(chosenNode, nodeIndex, command, shouldRetry, sessionInfo, req, url, controller);
 
-        console.log("I GOT RESOSN AND STERAM");
         if (!responseAndStream) {
             return;
         }
@@ -874,9 +871,6 @@ export class RequestExecutor implements IDisposable {
         let responseDispose: ResponseDisposeHandling = "Automatic";
 
         try {
-            console.log("RESPONSE = ", response, response.status);
-
-
             if (response.status === StatusCodes.NotModified) {
                 this._emitter.emit("succeedRequest", new SucceedRequestEventArgs(this._databaseName, url, response, req, attemptNum));
 
@@ -915,8 +909,6 @@ export class RequestExecutor implements IDisposable {
             }
 
             this._emitter.emit("succeedRequest", new SucceedRequestEventArgs(this._databaseName, url, response, req, attemptNum));
-
-            console.log("about to process resonse");
 
             responseDispose = await command.processResponse(this._cache, response, bodyStream, req.uri as string);
             this._lastReturnedResponse = new Date();
@@ -965,9 +957,6 @@ export class RequestExecutor implements IDisposable {
         try {
             this.numberOfServerRequests++;
 
-
-            console.log("sending request to the server");
-
             const timeout = command.timeout || this._defaultTimeout;
 
             if (!TypeUtil.isNullOrUndefined(timeout)) {
@@ -999,10 +988,7 @@ export class RequestExecutor implements IDisposable {
             } else {
                 return await this._send(chosenNode, command, sessionInfo, request);
             }
-
-            console.log("after send");
         } catch (e) {
-            console.log("error = ", e);
             if (e.name === "AllTopologyNodesDownException") {
                 throw e;
             }
