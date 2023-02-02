@@ -1002,7 +1002,7 @@ export class RequestExecutor implements IDisposable {
 
             console.log("after send");
         } catch (e) {
-            console.log("error = " + e);
+            console.log("error = ", e);
             if (e.name === "AllTopologyNodesDownException") {
                 throw e;
             }
