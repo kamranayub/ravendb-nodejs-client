@@ -130,7 +130,8 @@ export abstract class RavenCommand<TResult> {
 
         const optionsToUse = { body, ...restOptions, agent } as RequestInit;
 
-        const response: any = await fetch(uri, optionsToUse);
+        const fetcher = requestOptions.fetcher ?? fetch; // support for custom fetcher
+        const response: any = await fetcher(uri, optionsToUse);
 
         const text = await response.text();
 
